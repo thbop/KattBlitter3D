@@ -1,0 +1,5 @@
+*.exe
+/include/external/SDL2
+/.vscode
+*.dll
+*.a
