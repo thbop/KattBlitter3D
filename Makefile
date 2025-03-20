@@ -1,15 +1,25 @@
 CC = gcc
-CFLAGS = -fdiagnostics-color=always -Iinclude
+ASM = nasm
+CFLAGS = -c -g -fdiagnostics-color=always -Iinclude
+ASMFLAGS = -f win64
 LDFLAGS = -Llib -lSDL2
 
-SRC = a.c
-TARGET = a.exe
+NAME = a
+SRC = $(NAME).c
+TARGET = $(NAME).exe
 
-all: clean $(TARGET)
+all: clean rasterizer.o $(TARGET) clean2
+
+rasterizer.o : include/Rasterizer.asm
+	$(ASM) $(ASMFLAGS) include/Rasterizer.asm -o rasterizer.o
 
 $(TARGET) : $(SRC)
-	$(CC) $(CFLAGS) $(SRC) $(LDFLAGS) -o $(TARGET)
+	$(CC) $(CFLAGS) $(SRC) -o $(NAME).o
+	$(CC) rasterizer.o $(NAME).o -o $(TARGET) $(LDFLAGS)
 
+clean2:
+	rm -f $(NAME).o
+	rm -f rasterizer.o
 
 clean:
 	rm -f $(TARGET)

@@ -23,7 +23,7 @@
     } while(0)
 
 struct {
-    int width, height;
+    int32_t width, height;
     bool running;
 
     SDL_Window *window;

@@ -1,4 +1,4 @@
-#include "window.h"
+#include "KattBlitter3D.h"
 
 
 bool Initialize() {
@@ -15,7 +15,8 @@ void Update() {
 void Draw() {
     WindowClear();
 
-    _window.pixels[100] = 0xFF00FFFF;
+    _window.pixels[_window.width*50 + 50] = 0xFF0000FF;
+    RasterizeRectangle(10, 10, 0x00200020, 0xFF00FFFF);
 
     WindowFlip();
 }
