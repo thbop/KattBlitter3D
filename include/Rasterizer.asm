@@ -1,6 +1,9 @@
-
+; This isn't supposed to be readable, I'm just trying to avoid using additional memory.
+; If I were being serious, there would be a ton more stack operations...
 
 section .text
+
+
 
 extern _window
 ; struct {
@@ -21,53 +24,65 @@ extern _window
 ;     r9
 
 
+
 global RasterizeRectangle
-; __fastcall void RasterizeRectangle( uint32_t x, uint32_t y, uint32_t size, uint32_t color );
-;     ecx = x
-;     edx = y
-;     r8d = size (width, height)
-;     r9d = color (r, g, b, a)
+; __fastcall void RasterizeRectangle( u32_vec2 pos, u32_vec2 size, u8_color color );
+;     rcx = pos (x, y)
+;     rdx = size (width, height)
+;     r8d = color (r, g, b, a)
 RasterizeRectangle:
     ; Create stack frame
     ; push rbp
     ; mov rbp, rsp
 
+    ; Decode pos
+    mov r9, rcx
+    shr r9, 32                        ; r9d  = x
+
+    ; Decode size
+    mov r10, rdx
+    shr r10, 32                       ; r10d = width
+
     ; Setup pixel pointer
-    xor rbx, rbx                      ; rbx = 0 (just in case... hopefully nothing important in there)
-    mov ebx, dword [rel _window]      ; ebx = _window.width
-    mov eax, edx                      ; eax = y
-    imul eax, ebx                     ; eax = y * _window.width
-    add eax, ecx                      ; eax = y * _window.width + x
+    mov ebx, dword [rel _window]      ; ebx  = _window.width 
+
+    mov eax, ecx                      ; eax  = y
+    imul eax, ebx                     ; eax  = y * _window.width
+    add eax, r9d                      ; eax  = y * _window.width + x
     imul eax, 4                       ; Ensure we're addressing colors as uint32_t's
-    add rax, qword [rel _window + 40] ; eax += _window.pixels
+    add rax, qword [rel _window + 40] ; eax  += _window.pixels
 
-    ; Setup loop
-    mov r12d, r8d                     ; r12d = size
-    shr r12d, 16
-    imul r12d, 4                      ; r12w = width = i
-    mov r13w, r12w                    ; Store width to be reset each row iteration
-
-    and r8, 0xFFFF
+    ; Setup iterator offsets
+    ; Here I multiply many offsets by 4 so that 32 colors
+    ; are navigated correctly within memory.
+    imul r10d, 4
+    mov r11d, r10d                    ; Store width for later
+    imul edx, ebx
+    imul edx, 4
     imul ebx, 4
-    imul r8w, bx                     ; r8w  = height = j
 
-    
 .loop_y:
     .loop_x:
-        add rax, r8                  ; This is cheesy, but whatever
-        add rax, r12
-        mov [rax], r9d               ; Draw the pixel
-        sub rax, r8                  ; Clean up
-        sub rax, r12
+        add rax, r10                  ; This is cheesy, but whatever
+        add rax, rdx
+        mov [rax], r8d                ; Draw the pixel
+        sub rax, r10                  ; Clean up
+        sub rax, rdx
 
-        sub r12w, 4                  ; i--
+        sub r10d, 4                   ; i--
         jnz .loop_x
     
-    mov r12w, r13w                   ; i = width
-    sub r8w, bx                      ; j--
+    mov r10d, r11d                    ; i  = width
+    sub edx, ebx                      ; j--
     jnz .loop_y
 
     ; Exit
     ; mov rsp, rbp
     ; pop rbp
+    ret
+
+global _RasterizeLineLow
+; __fastcall void _RasterizeLineLow( u32_vec2 pos0, u32_vec2 pos1, u8_color color );
+_RasterizeLineLow:
+
     ret
