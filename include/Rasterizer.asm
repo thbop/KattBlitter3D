@@ -20,16 +20,17 @@ extern _window
 ;     r9
 
 
-; Sets a pixel
+; Setup for efficient rasterization
 ; Args:
-;     r10 - x
-;     r11 - y
-;     r8  - color
-SetPixel:
-    push rax                          ; rax = position in the buffer to draw
-    push r12                          ; r12 = start buffer pos
-    push r13                          ; r13 = end buffer pos
-
+;     r10 - start x
+;     r11 - start y
+; Returns:
+;     rax - position in the buffer to draw
+;     r10 - x offset (4)
+;     r11 - y offset (_window.width * 4)
+;     r12 - start buffer pos (for bounds checking)
+;     r13 - end buffer pos
+SetupPixelRasterizer:
     xor rax, rax
     mov eax, dword [rel _window]      ; rax = _window.width
     mov r13, rax                      ; r13 = _window.width
@@ -37,12 +38,28 @@ SetPixel:
     add rax, r10                      ; rax = _window.width * y + x
     imul rax, 4                       ; rax = offset from buffer start to pixel (each pixel is 4 bytes)
 
-    imul r13d, [rel _window + 4]      ; r13 = _window.width * _window.height
-    imul r13, 4                       ; r13 = offset from buffer start to the end of the buffer
+    imul r13, 4                       ; r13 = y offset size
+
+    mov r10, 4                        ; r10 = x offset size
+    mov r11, r13                      ; r11 = y offset size
+
+    imul r13d, [rel _window + 4]      ; r13 = (y offset * _window.height) = buffer size in bytes
 
     mov r12, qword [rel _window + 40] ; r12 = _window.pixels (start buffer pos)
     add r13, r12                      ; r13 = end buffer pos
     add rax, r12                      ; rax = pixel pos in the buffer
+
+    ret
+
+
+; After setting up the pixel rasterizer, this function will actually rasterize pixels
+; Args:
+;     rax - position in the buffer to draw
+;     r12 - start buffer pos (for bounds checking)
+;     r13 - end buffer pos
+;     r8  - color
+; Returns: Args
+RasterizePixel:
 
     cmp rax, r12                      ; if (drawPos < bufferStart)
     jl .ignore                        ;     goto ignore
@@ -53,9 +70,6 @@ SetPixel:
 
     .ignore:
 
-    pop r13
-    pop r12
-    pop rax
     ret
 
 global RasterizeRectangle
@@ -68,9 +82,10 @@ RasterizeRectangle:
     ; push rbp
     ; mov rbp, rsp
 
-    mov r10, 318
-    mov r11, 178
-    call SetPixel
+    mov r10, 0
+    mov r11, 0
+    call SetupPixelRasterizer
+    call RasterizePixel
 
     ; Exit
     ; mov rsp, rbp
