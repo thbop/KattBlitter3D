@@ -1,8 +1,4 @@
-; This isn't supposed to be readable, I'm just trying to avoid using additional memory.
-; If I were being serious, there would be a ton more stack operations...
-
 section .text
-
 
 
 extern _window
@@ -24,9 +20,46 @@ extern _window
 ;     r9
 
 
+; Sets a pixel
+; Args:
+;     r10 - x
+;     r11 - y
+;     r8  - color
+SetPixel:
+    push rax                          ; rax = position in the buffer to draw
+    push r12                          ; r12 = start buffer pos
+    push r13                          ; r13 = end buffer pos
+
+    xor rax, rax
+    mov eax, dword [rel _window]      ; rax = _window.width
+    mov r13, rax                      ; r13 = _window.width
+    imul rax, r11                     ; rax = _window.width * y
+    add rax, r10                      ; rax = _window.width * y + x
+    imul rax, 4                       ; rax = offset from buffer start to pixel (each pixel is 4 bytes)
+
+    imul r13d, [rel _window + 4]      ; r13 = _window.width * _window.height
+    imul r13, 4                       ; r13 = offset from buffer start to the end of the buffer
+
+    mov r12, qword [rel _window + 40] ; r12 = _window.pixels (start buffer pos)
+    add r13, r12                      ; r13 = end buffer pos
+    add rax, r12                      ; rax = pixel pos in the buffer
+
+    cmp rax, r12                      ; if (drawPos < bufferStart)
+    jl .ignore                        ;     goto ignore
+    cmp rax, r13                      ; if (drawPos > bufferEnd)
+    jg .ignore                        ;     goto ignore
+
+    mov [rax], r8                     ; Draw pixel
+
+    .ignore:
+
+    pop r13
+    pop r12
+    pop rax
+    ret
 
 global RasterizeRectangle
-; __fastcall void RasterizeRectangle( u32_vec2 pos, u32_vec2 size, u8_color color );
+; __fastcall void RasterizeRectangle( i32_vec2 pos, i32_vec2 size, u8_color color );
 ;     rcx = pos (x, y)
 ;     rdx = size (width, height)
 ;     r8d = color (r, g, b, a)
@@ -35,46 +68,9 @@ RasterizeRectangle:
     ; push rbp
     ; mov rbp, rsp
 
-    ; Decode pos
-    mov r9, rcx
-    shr r9, 32                        ; r9d  = x
-
-    ; Decode size
-    mov r10, rdx
-    shr r10, 32                       ; r10d = width
-
-    ; Setup pixel pointer
-    mov ebx, dword [rel _window]      ; ebx  = _window.width 
-
-    mov eax, ecx                      ; eax  = y
-    imul eax, ebx                     ; eax  = y * _window.width
-    add eax, r9d                      ; eax  = y * _window.width + x
-    imul eax, 4                       ; Ensure we're addressing colors as uint32_t's
-    add rax, qword [rel _window + 40] ; eax  += _window.pixels
-
-    ; Setup iterator offsets
-    ; Here I multiply many offsets by 4 so that 32 colors
-    ; are navigated correctly within memory.
-    imul r10d, 4
-    mov r11d, r10d                    ; Store width for later
-    imul edx, ebx
-    imul edx, 4
-    imul ebx, 4
-
-.loop_y:
-    .loop_x:
-        add rax, r10                  ; This is cheesy, but whatever
-        add rax, rdx
-        mov [rax], r8d                ; Draw the pixel
-        sub rax, r10                  ; Clean up
-        sub rax, rdx
-
-        sub r10d, 4                   ; i--
-        jnz .loop_x
-    
-    mov r10d, r11d                    ; i  = width
-    sub edx, ebx                      ; j--
-    jnz .loop_y
+    mov r10, 318
+    mov r11, 178
+    call SetPixel
 
     ; Exit
     ; mov rsp, rbp
@@ -82,7 +78,7 @@ RasterizeRectangle:
     ret
 
 global _RasterizeLineLow
-; __fastcall void _RasterizeLineLow( u32_vec2 pos0, u32_vec2 pos1, u8_color color );
+; __fastcall void _RasterizeLineLow( i32_vec2 pos0, i32_vec2 pos1, u8_color color );
 _RasterizeLineLow:
 
     ret

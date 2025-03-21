@@ -16,7 +16,7 @@ void Draw() {
     WindowClear();
 
     // _window.pixels[_window.width*50 + 50] = 0xFF0000FF;
-    RasterizeRectangle((u32_vec2){20, 20}, (u32_vec2){20, 20}, (u8_color){255, 0, 0, 255});
+    RasterizeRectangle((i32_vec2){0, 0}, (i32_vec2){18, 32}, (u8_color){255, 0, 0, 255});
 
     WindowFlip();
 }

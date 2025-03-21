@@ -1,6 +1,6 @@
 CC = gcc
 ASM = nasm
-CFLAGS = -c -g -fdiagnostics-color=always -Iinclude
+CFLAGS = -c -g -nostdlib -m64 -fdiagnostics-color=always -Iinclude
 ASMFLAGS = -f win64
 LDFLAGS = -Llib -lSDL2
 
