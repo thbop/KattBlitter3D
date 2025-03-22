@@ -31,7 +31,7 @@ void Draw() {
 
     while (t < t2) {
         t = time(NULL);
-        RasterizeRectangleC(mpos, (i32_vec2){100, 100}, (u8_color){255, 0, 0, 255});
+        RasterizeRectangle(mpos, (i32_vec2){100, 100}, (u8_color){255, 0, 0, 255});
         counter++;
     }
 

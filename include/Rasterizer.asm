@@ -36,9 +36,9 @@ SetupPixelRasterizer:
     mov r13, rax                      ; r13 = _window.width
     imul rax, r11                     ; rax = _window.width * y
     add rax, r10                      ; rax = _window.width * y + x
-    imul rax, 4                       ; rax = offset from buffer start to pixel (each pixel is 4 bytes)
+    shl rax, 2                        ; rax = offset from buffer start to pixel (each pixel is 4 bytes)
 
-    imul r13, 4                       ; r13 = y offset size
+    shl r13, 2                       ; r13 = y offset size
 
     mov r10, 4                        ; r10 = x offset size
     mov r11, r13                      ; r11 = y offset size
@@ -93,7 +93,7 @@ RasterizeRectangle:
     add r10, rcx                     ; x   += width (counter)
     add r11, rdx                     ; y   += height (counter)
     mov r15, rcx
-    imul r15, 4                      ; r15 = reset width offset
+    shl r15, 2                       ; r15 = reset width offset
     
     call SetupPixelRasterizer
     sub r11, r15                     ; When we go up a layer, this ensures width is reset
