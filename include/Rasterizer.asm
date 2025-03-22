@@ -57,7 +57,7 @@ SetupPixelRasterizer:
 ;     rax - position in the buffer to draw
 ;     r12 - start buffer pos (for bounds checking)
 ;     r13 - end buffer pos
-;     r8  - color
+;     r8d - color
 ; Returns: Args
 RasterizePixel:
 
@@ -66,7 +66,7 @@ RasterizePixel:
     cmp rax, r13                      ; if (drawPos > bufferEnd)
     jg .ignore                        ;     goto ignore
 
-    mov [rax], r8                     ; Draw pixel
+    mov [rax], r8d                    ; Draw pixel
 
     .ignore:
 
@@ -82,10 +82,37 @@ RasterizeRectangle:
     ; push rbp
     ; mov rbp, rsp
 
-    mov r10, 0
-    mov r11, 0
+    xor r10, r10
+    mov r10d, ecx                     ; r10 = x
+    shr rcx, 32
+    mov r11, rcx                      ; r11 = y
+
+    mov ecx, edx                     ; rcx = width
+    shr rdx, 32                      ; rdx = height
+    
+    add r10, rcx                     ; x   += width (counter)
+    add r11, rdx                     ; y   += height (counter)
+    mov r15, rcx
+    imul r15, 4                      ; r15 = reset width offset
+    
     call SetupPixelRasterizer
-    call RasterizePixel
+    sub r11, r15                     ; When we go up a layer, this ensures width is reset
+    mov r14, rcx                     ; r14 = reset width counter
+    
+    .loopY:
+        .loopX:
+            call RasterizePixel
+            sub rax, r10
+            dec ecx
+            jnz .loopX
+
+        mov ecx, r14d
+        
+        sub rax, r11
+        dec edx
+        jnz .loopY
+
+
 
     ; Exit
     ; mov rsp, rbp

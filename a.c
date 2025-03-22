@@ -1,5 +1,8 @@
 #include "KattBlitter3D.h"
+#include "time.h"
 
+time_t t, t2;
+int counter;
 
 bool Initialize() {
     bool ok;
@@ -16,7 +19,24 @@ void Draw() {
     WindowClear();
 
     // _window.pixels[_window.width*50 + 50] = 0xFF0000FF;
-    RasterizeRectangle((i32_vec2){0, 0}, (i32_vec2){18, 32}, (u8_color){255, 0, 0, 255});
+
+
+    i32_vec2 mpos;
+    SDL_GetMouseState(&mpos.x, &mpos.y);
+    mpos.x /= WINDOW_RATIO;
+    mpos.y /= WINDOW_RATIO;
+
+    t2 = time(NULL)+1;
+    counter = 0;
+
+    while (t < t2) {
+        t = time(NULL);
+        RasterizeRectangleC(mpos, (i32_vec2){100, 100}, (u8_color){255, 0, 0, 255});
+        counter++;
+    }
+
+
+    printf("%d\n", counter);
 
     WindowFlip();
 }
