@@ -23,9 +23,11 @@ void Draw() {
     mpos.x /= WINDOW_RATIO;
     mpos.y /= WINDOW_RATIO;
 
-    DrawRectangle(mpos, (i32_vec2){100, 100}, (u8_color){0, 255, 0, 255});
-    DrawPixel(mpos, (u8_color){255, 0, 0, 255});
-    DrawPixel((i32_vec2){mpos.x + 100, mpos.y + 100}, (u8_color){255, 0, 0, 255});
+    // DrawRectangle(mpos, (i32_vec2){100, 100}, (u8_color){0, 255, 0, 255});
+    // DrawPixel(mpos, (u8_color){255, 0, 0, 255});
+    // DrawPixel((i32_vec2){mpos.x + 100, mpos.y + 100}, (u8_color){255, 0, 0, 255});
+
+    _PlotLineLow(mpos, (i32_vec2){ _window.width>>1, _window.height>>1 }, (u8_color){ 255, 255, 0, 255 });
 
 
     WindowFlip();

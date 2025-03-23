@@ -109,11 +109,8 @@ global DrawRectangle
 ; __fastcall void DrawRectangle( i32_vec2 pos, i32_vec2 size, u8_color color );
 ;     rcx - pos (x, y)
 ;     rdx - size (width, height)
-;     r8d - color (r, g, b, a)
+;     r8d - color
 DrawRectangle:
-    ; Create stack frame
-    ; push rbp
-    ; mov rbp, rsp
 
     call _unpack_i32_vec2            ; r10 = pos.x
                                      ; r11 = pos.y
@@ -145,13 +142,70 @@ DrawRectangle:
 
 
 
-    ; Exit
-    ; mov rsp, rbp
-    ; pop rbp
     ret
 
 global _PlotLineLow
+; https://github.com/thbop/TinyGames/blob/main/shapes.h#L11
 ; __fastcall void _PlotLineLow( i32_vec2 pos0, i32_vec2 pos1, u8_color color );
+;     rcx - pos0 (x0, y0)
+;     rdx - pos1 (x1, y1)
+;     r8d - color
 _PlotLineLow:
+    call _unpack_i32_vec2            ; r10 = x0
+                                     ; r11 = y0
+    mov ecx, edx                     ; rcx = x1
+    shr rdx, 32                      ; rdx = y1
+    push rcx                         ; push x1
+    push r10                         ; push x0
 
+    sub rcx, r10                     ; rcx = dx = x1 - x0
+    sub rdx, r11                     ; rdx = dy = y1 - y0
+    mov r9, 1                        ; r9  = yi = 1
+    
+    cmp rdx, 0
+    jge .positive                    ; if ( dy < 0 )
+        neg r9                       ;     r9  = yi = -1
+        neg rdx                      ;     rdx = dy = -dy
+    .positive:
+    
+    mov rax, rdx                     ; rax = dy
+    sub rax, rcx                     ; rax = dy - dx
+    shl rax, 1                       ; rax = 2 * (dy - dx)
+    
+    shl rdx, 1                       ; rdx = 2 * dy
+    mov rbx, rdx                     ; rbx = 2 * dy (delta D 1)
+    
+    sub rdx, rcx                     ; rdx = D = (2 * dy) - dx
+    mov rcx, rax                     ; rcx = 2 * (dy - dx) (delta D 0)
+
+    pop r14                          ; r14 = x = x0
+    
+    call SetupRasterizer
+                                     ; 4  = x delta
+    imul r9, r11                     ; r9 = y delta
+
+    pop r10                          ; r10 = x1
+
+    .plotLoop:                       ; for ( x = x0; x < x1; x++ )
+        cmp r14, r10
+        jge .exitLoop                ; x < x1 (for)
+
+        call RasterizePixel
+
+        cmp rdx, 0
+        jle .negative                ; if ( D > 0 )
+            add rax, r9              ;     y += yi (sorta)
+            add rdx, rcx             ;     D += 2 * (dy - dx)
+        jmp .endif
+        .negative:                   ; else
+            add rdx, rbx             ;     D += 2 * dy
+        .endif:
+
+
+        inc r14
+        add rax, 4                   ; x++ (for)
+        jmp .plotLoop
+
+    .exitLoop
+    
     ret
