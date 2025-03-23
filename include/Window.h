@@ -52,7 +52,7 @@ bool WindowInitialize( const char *title, const int width, const int height ) {
 
     _window.texture = SDL_CreateTexture(
         _window.renderer,
-        SDL_PIXELFORMAT_RGBA8888,
+        SDL_PIXELFORMAT_ABGR8888,
         SDL_TEXTUREACCESS_STREAMING,
         width, height
     );

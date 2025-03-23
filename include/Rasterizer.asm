@@ -30,7 +30,7 @@ extern _window
 ;     r11 - y offset (_window.width * 4)
 ;     r12 - start buffer pos (for bounds checking)
 ;     r13 - end buffer pos
-SetupPixelRasterizer:
+SetupRasterizer:
     xor rax, rax
     mov eax, dword [rel _window]      ; rax = _window.width
     mov r13, rax                      ; r13 = _window.width
@@ -72,20 +72,51 @@ RasterizePixel:
 
     ret
 
-global RasterizeRectangle
-; __fastcall void RasterizeRectangle( i32_vec2 pos, i32_vec2 size, u8_color color );
-;     rcx = pos (x, y)
-;     rdx = size (width, height)
-;     r8d = color (r, g, b, a)
-RasterizeRectangle:
-    ; Create stack frame
-    ; push rbp
-    ; mov rbp, rsp
+
+; Unpacks a vector2 of i32's
+; Args:
+;     rcx - (x, y)
+; Returns:
+;     r10d - x
+;     r11d - y
+_unpack_i32_vec2:
+    push rcx
 
     xor r10, r10
     mov r10d, ecx                     ; r10 = x
     shr rcx, 32
     mov r11, rcx                      ; r11 = y
+
+    pop rcx
+    ret
+
+global DrawPixel
+; __fastcall void DrawPixel( i32_vec2 pos, u8_color color );
+;     rcx - pos (x, y)
+;     edx - color
+DrawPixel:
+    call _unpack_i32_vec2            ; r10 = pos.x
+                                     ; r11 = pos.y
+    mov r8d, edx                     ; r8d = color
+
+    call SetupRasterizer
+    call RasterizePixel
+
+
+    ret
+
+global DrawRectangle
+; __fastcall void DrawRectangle( i32_vec2 pos, i32_vec2 size, u8_color color );
+;     rcx - pos (x, y)
+;     rdx - size (width, height)
+;     r8d - color (r, g, b, a)
+DrawRectangle:
+    ; Create stack frame
+    ; push rbp
+    ; mov rbp, rsp
+
+    call _unpack_i32_vec2            ; r10 = pos.x
+                                     ; r11 = pos.y
 
     mov ecx, edx                     ; rcx = width
     shr rdx, 32                      ; rdx = height
@@ -95,7 +126,7 @@ RasterizeRectangle:
     mov r15, rcx
     shl r15, 2                       ; r15 = reset width offset
     
-    call SetupPixelRasterizer
+    call SetupRasterizer
     sub r11, r15                     ; When we go up a layer, this ensures width is reset
     mov r14, rcx                     ; r14 = reset width counter
     
@@ -119,8 +150,8 @@ RasterizeRectangle:
     ; pop rbp
     ret
 
-global _RasterizeLineLow
-; __fastcall void _RasterizeLineLow( i32_vec2 pos0, i32_vec2 pos1, u8_color color );
-_RasterizeLineLow:
+global _PlotLineLow
+; __fastcall void _PlotLineLow( i32_vec2 pos0, i32_vec2 pos1, u8_color color );
+_PlotLineLow:
 
     ret
